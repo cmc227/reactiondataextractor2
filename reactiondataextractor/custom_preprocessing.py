@@ -24,7 +24,7 @@ def preprocess_for_arrows(image_path: str):
 
 def preprocess_for_diagrams(image_path: str):
     print(f"[Preprocessing] Diagrams: Loading and processing image {image_path}")
-    fig = ImageReader(image_path, color_mode=ImageReader.COLOR_MODE.RGB).process()
+    fig = ImageReader(image_path, color_mode=ImageReader.COLOR_MODE.GRAY).process()
     fig = ImageScaler(fig, resize_min_dim_to=2048).process()
     fig = ImageNormaliser(fig).process()
     fig = Binariser(fig).process()
