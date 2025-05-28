@@ -26,6 +26,17 @@ def preprocess_for_diagrams(image_path: str):
     fig = ImageReader(image_path, color_mode=ImageReader.COLOR_MODE.RGB).process()
     fig = ImageScaler(fig, resize_min_dim_to=2048).process()
     fig = ImageNormaliser(fig).process()
+    fig = Binariser(fig).process()
+
+    print('[Preprocessing] Diagrams: Beginning moderate sharpening')
+    kernel = np.array([[0, -1, 0],
+                       [-1, 5, -1],
+                       [0, -1, 0]])
+    
+    # Apply sharpening filter to the image inside the Figure object
+    sharpened_img = cv2.filter2D(fig.img, -1, kernel)
+    fig.img = sharpened_img  # Replace the image inside the Figure object
+
     print("[Preprocessing] Diagrams: Done")
     return fig
 
