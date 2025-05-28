@@ -26,6 +26,7 @@ from models.output import ReactionScheme, RoleProbe
 from processors import ImageReader, ImageScaler, ImageNormaliser, Binariser
 from recognise import DecimerRecogniser
 
+from custom_preprocessing import preprocess_for_arrows, preprocess_for_diagrams, preprocess_for_labels, preprocess_for_conditions
 
 class SchemeExtractor(BaseExtractor):
     """The main, high-level scheme extraction class. Can be used for extracting from single images, or from directories.
@@ -95,10 +96,18 @@ class SchemeExtractor(BaseExtractor):
         fig = binarizer.process()
         Config.FIGURE = fig
         self._fig = fig
-        self.arrow_extractor.fig = fig
-        self.unified_extractor.fig = fig
+
+        arrow_fig = preprocess_for_arrows(str(path))
+        diagram_fig = preprocess_for_diagrams(str(path))
+        label_fig = preprocess_for_labels(str(path))
+        condition_fig = preprocess_for_conditions(str(path))
+        
+        self.arrow_extractor.fig = arrow_fig
+        self.unified_extractor.diagram_extractor._fig = diagram_fig
+        self.unified_extractor.label_extractor._fig = label_fig
+        self.unified_extractor.conditions_extractor._fig = condition_fig
         estimate_single_bond(fig)
-            
+         
         try:
             self.arrow_extractor.extract()
             diags_only = False
