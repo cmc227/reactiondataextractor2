@@ -75,8 +75,8 @@ def preprocess_for_labels(image_path: str):
         sr.readModel(sr_model_path)
         sr.setModel('edsr', 2)
     except Exception as e:
-        print(f'[Preprocessing] Labels: Failed to load SR model: {e}')
-        return fig  # Fail and return current figure
+        print(f'[Preprocessing] Labels: ERROR: Failed to load SR model: {e}')
+        sys.exit(1) # Abort
 
     if width > MAX_WIDTH or height > MAX_HEIGHT:
         print('[Preprocessing] Labels: Image too large for SR — skipping SR.')
