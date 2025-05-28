@@ -85,8 +85,6 @@ class SchemeExtractor(BaseExtractor):
         :return: parsed reaction scheme
         :rtype: ReactionScheme
         """
-        reader = ImageReader(str(path), color_mode=ImageReader.COLOR_MODE.GRAY)
-
         arrow_fig = preprocess_for_arrows(str(path))
         diagram_fig = preprocess_for_diagrams(str(path))
         label_fig = preprocess_for_labels(str(path))
@@ -96,6 +94,9 @@ class SchemeExtractor(BaseExtractor):
         self.unified_extractor.diagram_extractor._fig = diagram_fig
         self.unified_extractor.label_extractor._fig = label_fig
         self.unified_extractor.conditions_extractor._fig = condition_fig
+
+        self.fig = condition_fig
+        Config.FIGURE = condition_fig
         estimate_single_bond(fig)
          
         try:
