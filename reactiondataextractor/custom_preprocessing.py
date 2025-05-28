@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import sys
 from cv2 import dnn_superres
 from processors import ImageReader, ImageScaler, ImageNormaliser, Binariser
 
