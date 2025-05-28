@@ -1,3 +1,5 @@
+import cv2
+import numpy as np
 from processors import ImageReader, ImageScaler, ImageNormaliser, Binariser
 
 def preprocess_for_arrows(image_path: str):
@@ -6,6 +8,16 @@ def preprocess_for_arrows(image_path: str):
     fig = ImageScaler(fig, resize_min_dim_to=1024).process()
     fig = ImageNormaliser(fig).process()
     fig = Binariser(fig).process()
+
+    print('[Preprocessing] Arrows: Beginning edge-focused sharpening')
+    kernel = np.array([[1, -2, 1],
+                       [-2, 5, -2],
+                       [1, -2, 1]])
+    
+    # Apply sharpening filter to the image
+    sharpened_img = cv2.filter2D(fig.img, -1, kernel)
+    fig.img = sharpened_img
+
     print("[Preprocessing] Arrows: Done")
     return fig
 
