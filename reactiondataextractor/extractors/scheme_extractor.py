@@ -86,16 +86,6 @@ class SchemeExtractor(BaseExtractor):
         :rtype: ReactionScheme
         """
         reader = ImageReader(str(path), color_mode=ImageReader.COLOR_MODE.GRAY)
-        fig = reader.process()
-        scaler = ImageScaler(fig, resize_min_dim_to=1024)#, enabled=True)
-        fig = scaler.process()
-        normaliser = ImageNormaliser(fig)
-        fig = normaliser.process()
-
-        binarizer = Binariser(fig)
-        fig = binarizer.process()
-        Config.FIGURE = fig
-        self._fig = fig
 
         arrow_fig = preprocess_for_arrows(str(path))
         diagram_fig = preprocess_for_diagrams(str(path))
