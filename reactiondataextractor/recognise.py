@@ -63,12 +63,29 @@ class DecimerRecogniser:
         :type predicted_array: Tensor
         :return: smiles representation of a diagram
         :rtype: str"""
+        # Check if predicted_array is a tuple and handle accordingly
+        if isinstance(predicted_array, tuple):
+            # Unpack the tuple if needed; assuming the first element is the relevant tensor
+            predicted_array = predicted_array[0]  # Use the first element in the tuple
+
+        # Ensure predicted_array is a tensor and check its dtype
+        if isinstance(predicted_array, tf.Tensor):
+            if predicted_array.dtype != tf.int32:
+                predicted_array = tf.cast(predicted_array, tf.int32)  # Cast to int32 if not already
+
+        # Squeeze the tensor to remove dimensions of size 1, then convert to numpy
         outputs = [tokenizer.index_word[i] for i in tf.squeeze(predicted_array).numpy()]
+
+        # Construct the SMILES string, removing <start> and <end> tokens
         prediction = (
             "".join([str(elem) for elem in outputs])
             .replace("<start>", "")
             .replace("<end>", "")
         )
+
+        return prediction
+
+    
 
         return prediction
     
