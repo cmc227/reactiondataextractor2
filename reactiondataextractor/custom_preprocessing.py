@@ -1,96 +1,115 @@
 import cv2
 import numpy as np
+import os
 import sys
-from cv2 import dnn_superres
+import imageio
 from processors import ImageReader, ImageScaler, ImageNormaliser, Binariser
 
 def preprocess_for_arrows(image_path: str):
     print(f"[Preprocessing] Arrows: Loading and processing image {image_path}")
-    fig = ImageReader(image_path, color_mode=ImageReader.COLOR_MODE.GRAY).process()
-    fig = ImageScaler(fig, resize_min_dim_to=1024).process()
-    fig = ImageNormaliser(fig).process()
-    fig = Binariser(fig).process()
 
-    print('[Preprocessing] Arrows: Beginning edge-focused sharpening')
+    filename = os.path.basename(image_path)
+    if not filename.lower().endswith(('png', '.jpg', '.jpeg', '.gif')):
+        print(f'Unsupported file type: {filename}')
+        return None
+
+    if filename.lower().endswith('.gif'):
+        gif = imageio.mimread(image_path)
+        img = np.array(gif[0])
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    else:
+        img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
+    if img is None:
+        print(f'Failed to load image: {filename}')
+        return None
+    
     kernel = np.array([[1, -2, 1],
                        [-2, 5, -2],
                        [1, -2, 1]])
-    
-    # Apply sharpening filter to the image
-    sharpened_img = cv2.filter2D(fig.img, -1, kernel)
-    fig.img = sharpened_img
+    arrow_image = cv2.filter2D(img, -1, kernel)
 
-    print("[Preprocessing] Arrows: Done")
-    return fig
+    print(f"[Preprocessing] Arrows: Complete")
+
+    return arrow_image
 
 def preprocess_for_diagrams(image_path: str):
     print(f"[Preprocessing] Diagrams: Loading and processing image {image_path}")
-    fig = ImageReader(image_path, color_mode=ImageReader.COLOR_MODE.GRAY).process()
-    fig = ImageScaler(fig, resize_min_dim_to=2048).process()
-    fig = ImageNormaliser(fig).process()
-    fig = Binariser(fig).process()
 
-    print('[Preprocessing] Diagrams: Beginning moderate sharpening')
+    filename = os.path.basename(image_path)
+    if not filename.lower().endswith(('png', '.jpg', '.jpeg', '.gif')):
+        print(f'Unsupported file type: {filename}')
+        return None
+
+    if filename.lower().endswith('.gif'):
+        gif = imageio.mimread(image_path)
+        img = np.array(gif[0])
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    else:
+        img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
+    if img is None:
+        print(f'Failed to load image: {filename}')
+        return None
+    
     kernel = np.array([[0, -1, 0],
                        [-1, 5, -1],
                        [0, -1, 0]])
-    
-    # Apply sharpening filter to the image inside the Figure object
-    sharpened_img = cv2.filter2D(fig.img, -1, kernel)
-    fig.img = sharpened_img  # Replace the image inside the Figure object
+    diagram_image = cv2.filter2D(img, -1, kernel)
 
-    print("[Preprocessing] Diagrams: Done")
-    return fig
+    print(f"[Preprocessing] Diagrams: Complete")
 
-def preprocess_for_conditions(image_path: str):
-    print(f"[Preprocessing] Conditions: Loading and processing image {image_path}")
-    fig = ImageReader(image_path, color_mode=ImageReader.COLOR_MODE.GRAY).process()
-    fig = ImageScaler(fig, resize_min_dim_to=1024).process()
-    fig = ImageNormaliser(fig).process()
-    fig = Binariser(fig).process()
-    print("[Preprocessing] Conditions: Done")
-    return fig
+    return diagram_image
 
-def preprocess_for_labels(image_path: str):
+
+def preprocess_for_labels(image_path: str, sr):
     print(f"[Preprocessing] Labels: Loading and processing image {image_path}")
-    fig = ImageReader(image_path, color_mode=ImageReader.COLOR_MODE.GRAY).process()
-    fig = ImageScaler(fig, resize_min_dim_to=1024).process()
-    fig = ImageNormaliser(fig).process()
-    fig = Binariser(fig).process()
 
-    print('[Preprocessing] Labels: Beginning edge-focused sharpening')
+    filename = os.path.basename(image_path)
+    if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+        print(f"[Preprocessing] Labels: Unsupported file type: {filename}")
+        return None
+
+    # Load image
+    if filename.lower().endswith('.gif'):
+        try:
+            gif = imageio.mimread(image_path)
+            img = np.array(gif[0])
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        except Exception as e:
+            print(f"[Preprocessing] Labels: Failed to read GIF: {e}")
+            return None
+    else:
+        img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
+    if img is None:
+        print(f"[Preprocessing] Labels: Failed to load image: {filename}")
+        return None
+
+    # Apply sharpening filter
     kernel = np.array([[1, -2, 1],
                        [-2, 5, -2],
                        [1, -2, 1]])
-    
-    # Apply sharpening filter to the image inside the Figure object
-    sharpened_img = cv2.filter2D(fig.img, -1, kernel)
-    fig.img = sharpened_img  # Replace the image inside the Figure object
+    label_image = cv2.filter2D(img, -1, kernel)
 
+    # Super-resolution (EDSR)
     print('[Preprocessing] Labels: Beginning SR with EDSR')
-    MAX_WIDTH = 1655
-    MAX_HEIGHT = 658
+    MAX_WIDTH = 1500
+    MAX_HEIGHT = 500
+    height, width = label_image.shape[:2]
+    print(f'Width: {width}, Height: {height}')
 
-    height, width = fig.img.shape[:2]
-
-    sr_model_path = 'EDSR_x2.pb'
-    sr = dnn_superres.DnnSuperResImpl_create()
-    try:
-        sr.readModel(sr_model_path)
-        sr.setModel('edsr', 2)
-    except Exception as e:
-        print(f'[Preprocessing] Labels: ERROR: Failed to load SR model: {e}')
-        sys.exit(1) # Abort
-
+    # Skip SR if image too large
     if width > MAX_WIDTH or height > MAX_HEIGHT:
-        print('[Preprocessing] Labels: Image too large for SR — skipping SR.')
-        return fig
+        print('[Preprocessing] Labels: Image too large for SR — skipping.')
+        return label_image
 
+    # Try SR upsampling
     try:
-        upscaled_img = sr.upsample(fig.img)
-        fig.img = upscaled_img  # Replace with upsampled image
+        upscaled_img = sr.upsample(label_image)
         print('[Preprocessing] Labels: SR completed successfully')
+        return upscaled_img
     except Exception as e:
         print(f'[Preprocessing] Labels: SR failed: {e}')
+        return label_image
 
-    return fig
