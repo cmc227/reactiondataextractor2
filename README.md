@@ -1,3 +1,6 @@
+This is a modified copy of ReactionDataExtractor which implements preprocessing of images before extraction.
+Script custom_preprocessing.py is added and scheme_extractor.py editted.
+
 **ReactionDataExtractor** is a toolkit for the automatic extraction of data from chemical reaction schemes.
 
 ## Features
