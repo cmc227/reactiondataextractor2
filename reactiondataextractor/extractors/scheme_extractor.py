@@ -60,14 +60,20 @@ class SchemeExtractor(BaseExtractor):
     def extracted(self):
         return self.scheme
 
-    def extract(self):
-        """The main extraction method. Allows extraction from single image or a directory using a single interface. """
-        if not self._extract_single_image:
-            return self.extract_from_dir()
-        else:
-            scheme = self.extract_from_image(self.path)
+
+    def extract(self, path):
+        """The main extraction method. Allows extraction from a single image file or a directory using a single interface."""
+        if os.path.isdir(path):
+            # If the path is a directory, extract from directory
+            return self.extract_from_dir(path)
+        elif os.path.isfile(path):
+            # If the path is a file, extract from single image
+            scheme = self.extract_from_image(path)
             self.scheme = scheme
             return scheme
+        else:
+            raise ValueError(f"The provided path '{path}' is neither a file nor a directory.")
+
 
     def plot_extracted(self, ax=None):
         """Currently plotting is supported only for single-image extraction"""
@@ -189,13 +195,8 @@ class SchemeExtractor(BaseExtractor):
         return schemes
 
     def save_output_to_disk(self, output, image_path):
-        """Writes the reconstructed output to disk
-        :param output: Reconstructed output object
-        :type output: ReactionScheme
-        :param image_path: path to the input image from which the scheme was extracted
-        :type image_path: Path
-        :return: None
-        """
+        """Writes the reconstructed output to disk"""
+        image_path = Path(image_path)  # ensure it's a Path object
         out_name = Path(f'{image_path.stem}.json')
         outpath = self.opts.output_dir / out_name
         with open(outpath, 'w') as outfile:
